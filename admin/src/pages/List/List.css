@@ -17,6 +17,15 @@
 .cursor{
   cursor: pointer;
 }
+.loader-center {
+  display: flex;
+  justify-content: center;
+  padding: 32px 0;
+}
+.no-data {
+  justify-content: center;
+  text-align: center;
+}
 @media (max-width: 600px) {
   /* Hide the Number, Category, and Price on small screens to keep the 3-column look */
   .list-table-format p:nth-child(1),

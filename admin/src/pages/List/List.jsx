@@ -4,19 +4,27 @@ import { useEffect, useState } from "react"
 import "./List.css"
 import axios from "axios"
 import { toast } from "react-toastify"
+import Loader from "../../component/Loader/Loader"
 
 
 const List = ({url}) => {
 
   const [list, setList] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   const fetchList = async () => {
-    const response = await axios.get(`${url}/api/food/list`);
-
-    if (response.data.success) {
-      setList(response.data.data);
-    } else {
-      toast.error("Failed to fetch list");
+    setLoading(true);
+    try {
+      const response = await axios.get(`${url}/api/food/list`);
+      if (response.data.success) {
+        setList(response.data.data);
+      } else {
+        toast.error("Failed to fetch list");
+      }
+    } catch (error) {
+      toast.error("Network error. Please try again.");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -46,19 +54,30 @@ const List = ({url}) => {
           <b>Price</b>
           <b>Action</b>
         </div>
-        {list.map((item, index) => {
-          return (
-            <div key={index} className="list-table-format">
-              <b className="number">{index + 1}</b>
-              <img src={`${url}/images/` + item.image} alt="image" />
-              <b>{item.name}</b>
-              <b>{item.category}</b>
-              <b>₦{item.price}</b>
-              <b onClick={() => removeFood(item._id)} className="cursor">
-                X
-              </b>
-            </div>
-          );})}
+        {loading ? (
+          <div className="loader-center">
+            <Loader />
+          </div>
+        ) : list.length === 0 ? (
+          <div className="list-table-format no-data">
+            <b>No food items available.</b>
+          </div>
+        ) : (
+          list.map((item, index) => {
+            return (
+              <div key={index} className="list-table-format">
+                <b className="number">{index + 1}</b>
+                <img src={`${url}/images/` + item.image} alt="image" />
+                <b>{item.name}</b>
+                <b>{item.category}</b>
+                <b>₦{item.price}</b>
+                <b onClick={() => removeFood(item._id)} className="cursor">
+                  X
+                </b>
+              </div>
+            );
+          })
+        )}
       </div>
     </div>
   );
