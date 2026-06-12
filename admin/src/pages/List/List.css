@@ -1,0 +1,34 @@
+.list-table-format{
+  display: grid;
+  grid-template-columns: 0.2fr 1fr 2fr 1fr 0.5fr 0.5fr;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 15px;
+  border: 0.5px solid #fee5e5;
+  font-size: 13px;
+
+}
+.list-table-format.title{
+  background-color: #f9f9f9
+}
+.list-table-format img{
+  width: 50px
+}
+.cursor{
+  cursor: pointer;
+}
+@media (max-width: 600px) {
+  /* Hide the Number, Category, and Price on small screens to keep the 3-column look */
+  .list-table-format p:nth-child(1),
+  .list-table-format p:nth-child(4),
+  .list-table-format p:nth-child(5) {
+    display: none;
+  }
+  
+  .list-table-format {
+    grid-template-columns: 1fr 3fr 1fr; /* Image, Name, Action */
+  }
+  .list-table-format .number{
+    display: none;
+  }
+}
