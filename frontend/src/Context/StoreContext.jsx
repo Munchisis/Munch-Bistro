@@ -1,9 +1,6 @@
-/* eslint-disable react-hooks/set-state-in-effect */
 import axios from "axios";
-import { createContext, useEffect, useState } from "react";
-
-// eslint-disable-next-line react-refresh/only-export-components
-export const StoreContext = createContext(null);
+import { useEffect, useState } from "react";
+import StoreContext from "./storeContext";
 
 const StoreContextProvider = (props) => {
   const [cartItems, setCartItems] = useState({});
@@ -12,11 +9,8 @@ const StoreContextProvider = (props) => {
   const [food_list, setFoodlist] = useState([]);
 
   const addToCart = async (itemId) => {
-    if (!cartItems[itemId]) {
-      setCartItems((prev) => ({ ...prev, [itemId]: 1 }));
-    } else {
-      setCartItems((prev) => ({ ...prev, [itemId]: prev[itemId] + 1 }));
-    }
+    setCartItems((prev) => ({ ...prev, [itemId]: (prev[itemId] || 0) + 1 }));
+
     if (token) {
       try {
         await axios.post(
@@ -31,7 +25,15 @@ const StoreContextProvider = (props) => {
   };
 
   const removeFromCart = async (itemId) => {
-    setCartItems((prev) => ({ ...prev, [itemId]: prev[itemId] - 1 }));
+    setCartItems((prev) => {
+      const currentQuantity = prev[itemId] || 0;
+      if (currentQuantity <= 1) {
+        const { [itemId]: _, ...rest } = prev;
+        return rest;
+      }
+      return { ...prev, [itemId]: currentQuantity - 1 };
+    });
+
     if (token) {
       try {
         await axios.post(
@@ -40,7 +42,6 @@ const StoreContextProvider = (props) => {
           { headers: { token } },
         );
       } catch (error) {
-        console.log(error);
         console.error("Error removing from cart:", error);
       }
     }
@@ -50,7 +51,8 @@ const StoreContextProvider = (props) => {
     let totalAmount = 0;
     for (const item in cartItems) {
       if (cartItems[item] > 0) {
-        let itemInfo = food_list.find((product) => product._id === item);
+        const itemInfo = food_list.find((product) => product._id === item);
+        if (!itemInfo) continue;
         totalAmount += itemInfo.price * cartItems[item];
       }
     }
@@ -63,8 +65,12 @@ const StoreContextProvider = (props) => {
   };
 
   const loadCartData = async (token) => {
-    const response = await axios.post(url + "/api/cart/get", {}, { headers: { token } });
-    setCartItems(response.data.cartData);
+    const response = await axios.post(
+      url + "/api/cart/get",
+      {},
+      { headers: { token } },
+    );
+    setCartItems(response.data?.cartData || {});
   };
 
   useEffect(() => {

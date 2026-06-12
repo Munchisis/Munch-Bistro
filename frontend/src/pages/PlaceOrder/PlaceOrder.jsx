@@ -1,19 +1,15 @@
-/* eslint-disable no-unused-vars */
-
-import { useContext } from "react";
+import { useContext, useState, useEffect } from "react";
 import "./PlaceOrder.css";
 import { StoreContext } from "../../Context/StoreContext";
-import { useState } from "react";
 import axios from "axios";
-import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Loader from "../../components/Loader/Loader";
 
 const PlaceOrder = () => {
   const { getTotalCartAmount, token, food_list, cartItems, url } =
     useContext(StoreContext);
-  
-    const [loading, setLoading] = useState(false);
+
+  const [loading, setLoading] = useState(false);
 
   const [data, setData] = useState({
     firstName: "",
@@ -34,31 +30,36 @@ const PlaceOrder = () => {
 
   const placeOrder = async (event) => {
     event.preventDefault();
-    setLoading(true); // Start loading
+    const subTotal = getTotalCartAmount();
 
-    // Block submission if cart is empty
-    if (getTotalCartAmount() === 0) {
+    if (subTotal === 0) {
       alert("Your cart is empty! Please add items before checking out.");
       return;
     }
 
-    let orderItems = [];
-    food_list.forEach((item) => {
-      if (cartItems[item._id] > 0) {
-        // Create a copy so we don't mutate the original food_list state
-        let itemInfo = { ...item, quantity: cartItems[item._id] };
-        orderItems.push(itemInfo);
+    const orderItems = food_list.reduce((items, item) => {
+      const quantity = cartItems[item._id] || 0;
+      if (quantity > 0) {
+        items.push({ ...item, quantity });
       }
-    });
+      return items;
+    }, []);
+
+    if (orderItems.length === 0) {
+      alert("Your cart appears empty. Please refresh and try again.");
+      return;
+    }
+
     const deliveryFee = 500;
-    let orderData = {
+    const orderData = {
       address: data,
       items: orderItems,
-      amount: getTotalCartAmount() + deliveryFee,
+      amount: subTotal + deliveryFee,
     };
 
+    setLoading(true);
     try {
-      let response = await axios.post(url + "/api/order/place", orderData, {
+      const response = await axios.post(url + "/api/order/place", orderData, {
         headers: { token },
       });
 
@@ -66,28 +67,26 @@ const PlaceOrder = () => {
         const { url: session_url } = response.data;
         window.location.replace(session_url);
       } else {
-        alert("Error placing order");
+        alert(response.data.message || "Error placing order");
       }
     } catch (error) {
       console.error("Error placing order:", error);
       alert("An error occurred while redirecting to Stripe. Please try again.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false); // Stop loading on error so they can try again
   };
   const navigate = useNavigate();
 
   //redirect users that has logged in
   useEffect(() => {
     if (!token) {
-
       // Tell the home page to open login AND remember we want to go back to /order
       navigate("/", { state: { openLogin: true, from: "/order" } });
     } else if (getTotalCartAmount() === 0) {
       navigate("/cart");
     }
   }, [token, getTotalCartAmount, navigate]);
-
-  
 
   return (
     <form className="place-order" onSubmit={placeOrder}>

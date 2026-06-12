@@ -1,12 +1,12 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { assets } from "../../assets/assets";
 import "./Add.css";
 import axios from "axios";
 import { toast } from "react-toastify";
 
-const Add = ({url}) => {
-
-  const [image, setImage] = useState(false);
+const Add = ({ url }) => {
+  const [image, setImage] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [data, setData] = useState({
     name: "",
     description: "",
@@ -19,16 +19,43 @@ const Add = ({url}) => {
     const value = event.target.value;
     setData((data) => ({ ...data, [name]: value }));
   };
-    
-    
-    const onSubmitHandler = async (event) => {
-        event.preventDefault();
-        const formData = new FormData();
-        formData.append("name", data.name)
-        formData.append("description", data.description);
-        formData.append("price", Number(data.price));
-        formData.append("category", data.category);
-      formData.append("image", image);
+
+  const previewUrl = useMemo(
+    () => (image ? URL.createObjectURL(image) : assets.upload_area),
+    [image],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (image) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [image, previewUrl]);
+
+  const onSubmitHandler = async (event) => {
+    event.preventDefault();
+
+    if (!image) {
+      toast.error("Please select a product image.");
+      return;
+    }
+
+    const priceValue = Number(data.price);
+    if (Number.isNaN(priceValue) || priceValue < 0) {
+      toast.error("Please enter a valid price.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("name", data.name);
+    formData.append("description", data.description);
+    formData.append("price", priceValue);
+    formData.append("category", data.category);
+    formData.append("image", image);
+
+    setLoading(true);
+    try {
       const response = await axios.post(`${url}/api/food/add`, formData);
       if (response.data.success) {
         setData({
@@ -37,12 +64,18 @@ const Add = ({url}) => {
           price: "",
           category: "Salad",
         });
-        setImage(false);
+        setImage(null);
         toast.success(response.data.message);
       } else {
-        toast.error(response.data.message);
+        toast.error(response.data.message || "Unable to add food item.");
       }
+    } catch (error) {
+      console.error("Error adding food item:", error);
+      toast.error("Unable to add food item. Please try again.");
+    } finally {
+      setLoading(false);
     }
+  };
 
   return (
     <div className="add">
@@ -50,10 +83,7 @@ const Add = ({url}) => {
         <div className="add-img-upload flex-col">
           <p>Upload Image</p>
           <label htmlFor="image">
-            <img
-              src={image ? URL.createObjectURL(image) : assets.upload_area}
-              alt=""
-            />
+            <img src={previewUrl} alt="" />
           </label>
           <input
             onChange={(e) => setImage(e.target.files[0])}
@@ -109,8 +139,8 @@ const Add = ({url}) => {
             />
           </div>
         </div>
-        <button type="submit" className="add-btn">
-          ADD
+        <button type="submit" className="add-btn" disabled={loading}>
+          {loading ? "Saving..." : "ADD"}
         </button>
       </form>
     </div>

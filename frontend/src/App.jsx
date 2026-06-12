@@ -8,7 +8,7 @@ import Footer from "./components/Footer/Footer";
 import LoginPopup from "./components/LoginPopup/LoginPopup";
 import Verify from "./pages/Verify/Verify";
 import MyOrders from "./pages/MyOrders/MyOrders";
- import { ToastContainer } from "react-toastify";
+import { ToastContainer } from "react-toastify";
 
 const App = () => {
   const [showLogin, setShowLogin] = useState(false);
@@ -17,12 +17,11 @@ const App = () => {
   useEffect(() => {
     // Check if we arrived here because the PlaceOrder page sent us to log in
     if (location.state?.openLogin) {
-      setShowLogin(true);
-
+      const timeoutId = window.setTimeout(() => setShowLogin(true), 0);
+      return () => window.clearTimeout(timeoutId);
     }
   }, [location]);
 
-  
   return (
     <>
       {showLogin ? <LoginPopup setShowLogin={setShowLogin} /> : <></>}

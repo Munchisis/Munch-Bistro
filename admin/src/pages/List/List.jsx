@@ -1,18 +1,14 @@
-/* eslint-disable no-unused-vars */
-/* eslint-disable react-hooks/set-state-in-effect */
-import { useEffect, useState } from "react"
-import "./List.css"
-import axios from "axios"
-import { toast } from "react-toastify"
-import Loader from "../../component/Loader/Loader"
+import { useCallback, useEffect, useState } from "react";
+import "./List.css";
+import axios from "axios";
+import { toast } from "react-toastify";
+import Loader from "../../component/Loader/Loader";
 
-
-const List = ({url}) => {
-
+const List = ({ url }) => {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const fetchList = async () => {
+  const fetchList = useCallback(async () => {
     setLoading(true);
     try {
       const response = await axios.get(`${url}/api/food/list`);
@@ -21,26 +17,27 @@ const List = ({url}) => {
       } else {
         toast.error("Failed to fetch list");
       }
-    } catch (error) {
+    } catch {
       toast.error("Network error. Please try again.");
     } finally {
       setLoading(false);
     }
-  }
+  }, [url]);
 
-  const removeFood = async (foodId) => { 
+  const removeFood = async (foodId) => {
     const response = await axios.post(`${url}/api/food/remove`, { id: foodId });
     await fetchList();
-      if (response.data.success) {
-        toast.success(response.data.message || "Food removed successfully");
-      } else {
-        toast.error(response.data.message || "Failed to remove food");
-      } 
-  }
+    if (response.data.success) {
+      toast.success(response.data.message || "Food removed successfully");
+    } else {
+      toast.error(response.data.message || "Failed to remove food");
+    }
+  };
 
   useEffect(() => {
-    fetchList();
-  }, [])
+    const timeout = window.setTimeout(fetchList, 0);
+    return () => window.clearTimeout(timeout);
+  }, [fetchList]);
 
   return (
     <div className="list add flex-col">
@@ -65,7 +62,7 @@ const List = ({url}) => {
         ) : (
           list.map((item, index) => {
             return (
-              <div key={index} className="list-table-format">
+              <div key={item._id || index} className="list-table-format">
                 <b className="number">{index + 1}</b>
                 <img src={`${url}/images/` + item.image} alt="image" />
                 <b>{item.name}</b>
@@ -81,6 +78,6 @@ const List = ({url}) => {
       </div>
     </div>
   );
-}
+};
 
-export default List
+export default List;

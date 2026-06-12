@@ -1,5 +1,4 @@
-/* eslint-disable no-unused-vars */
-import { useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import "./MyOrders.css";
 import { StoreContext } from "../../Context/StoreContext";
 import axios from "axios";
@@ -13,30 +12,33 @@ const MyOrders = () => {
   const [refreshing, setRefreshing] = useState(false);
   const navigate = useNavigate();
 
-  const fetchOrders = async (isRefresh = false) => {
-    if (isRefresh) setRefreshing(true);
-    else setLoading(true);
+  const fetchOrders = useCallback(
+    async (isRefresh = false) => {
+      if (isRefresh) setRefreshing(true);
+      else setLoading(true);
 
-    try {
-      const response = await axios.post(
-        url + "/api/order/userorders",
-        {},
-        { headers: { token } },
-      );
-      setData(response.data.data);
-    } catch (error) {
-      console.error("Error fetching orders:", error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
+      try {
+        const response = await axios.post(
+          url + "/api/order/userorders",
+          {},
+          { headers: { token } },
+        );
+        setData(response.data?.data || []);
+      } catch (error) {
+        console.error("Error fetching orders:", error);
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [token, url],
+  );
 
   useEffect(() => {
     if (token) {
       fetchOrders();
     }
-  }, [token]);
+  }, [token, fetchOrders]);
 
   // Add this helper function inside your component before the return
   const getStatusClass = (status) => {
@@ -53,8 +55,6 @@ const MyOrders = () => {
         return "status-grey";
     }
   };
-
-  
 
   return (
     <div className="my-orders">

@@ -6,35 +6,56 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 // placing user order from frontend
 const placeOrder = async (req, res) => {
-  const frontendUrl = "https://munch-bistro-frontend.onrender.com/";
+  const frontendUrl =
+    process.env.FRONTEND_URL || "https://munch-bistro-frontend.onrender.com";
+  const userId = req.userId || req.body.userId;
+  const { items, amount, address } = req.body || {};
+
+  if (!userId) {
+    return res
+      .status(401)
+      .json({ success: false, message: "Unauthorized request" });
+  }
+
+  if (!Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({
+      success: false,
+      message: "Your cart is empty. Please add items before checking out.",
+    });
+  }
+
+  if (!address || typeof address !== "object") {
+    return res
+      .status(400)
+      .json({ success: false, message: "Address is required" });
+  }
+
+  const amountValue = Number(amount);
+  if (!amountValue || amountValue <= 0) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Invalid order total" });
+  }
 
   try {
-    // Validation: Check if the cart is empty
-    if (!req.body.items || req.body.items.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Your cart is empty. Please add items before checking out.",
-      });
-    }
-
     const newOrder = new orderModel({
-      userId: req.body.userId,
-      items: req.body.items,
-      amount: req.body.amount,
-      address: req.body.address,
+      userId,
+      items,
+      amount: amountValue,
+      address,
     });
     await newOrder.save();
-    await userModel.findByIdAndUpdate(req.body.userId, { cartData: {} });
+    await userModel.findByIdAndUpdate(userId, { cartData: {} });
 
-    const line_items = req.body.items.map((item) => ({
+    const line_items = items.map((item) => ({
       price_data: {
         currency: "USD",
         product_data: {
-          name: item.name,
+          name: item.name || "Food Item",
         },
-        unit_amount: item.price * 100,
+        unit_amount: Math.max(0, Number(item.price) || 0) * 100,
       },
-      quantity: item.quantity,
+      quantity: Math.max(1, Number(item.quantity) || 1),
     }));
 
     line_items.push({
@@ -43,7 +64,7 @@ const placeOrder = async (req, res) => {
         product_data: {
           name: "Delivery Fee",
         },
-        unit_amount: 5 * 100,
+        unit_amount: 500,
       },
       quantity: 1,
     });
@@ -64,24 +85,34 @@ const placeOrder = async (req, res) => {
 };
 
 const verifyOrder = async (req, res) => {
-  const { orderId, success } = req.body;
-  console.log("Verifying order:", { orderId, success, type: typeof success });
+  const { orderId, success } = req.body || {};
+  if (!orderId || typeof success !== "string") {
+    return res
+      .status(400)
+      .json({ success: false, message: "Invalid verification request" });
+  }
+
   try {
-    if (success == "true") {
-      const updatedOrder = await orderModel.findByIdAndUpdate(
-        orderId,
-        { payment: true },
-        { new: true },
-      );
-      console.log("Order updated:", updatedOrder);
-      res.json({ success: true, message: "paid" });
-    } else {
-      await orderModel.findByIdAndDelete(orderId);
-      res.json({ success: false, message: "Not Paid" });
+    const order = await orderModel.findById(orderId);
+    if (!order) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Order not found" });
     }
+
+    if (success === "true") {
+      order.payment = true;
+      await order.save();
+      return res.json({ success: true, message: "Payment confirmed" });
+    }
+
+    await orderModel.findByIdAndDelete(orderId);
+    return res.json({ success: false, message: "Payment not completed" });
   } catch (error) {
-    console.log("Error in verifyOrder:", error);
-    res.json({ success: false, message: "Error" });
+    console.error("Error in verifyOrder:", error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Error verifying order" });
   }
 };
 
@@ -143,13 +174,17 @@ const removeOrder = async (req, res) => {
     const { id } = req.body;
 
     if (!id) {
-      return res.status(400).json({ success: false, message: "Order ID is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Order ID is required" });
     }
 
     const deletedOrder = await orderModel.findByIdAndDelete(id);
 
     if (!deletedOrder) {
-      return res.status(404).json({ success: false, message: "Order not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Order not found" });
     }
 
     res.json({ success: true, message: "Order removed successfully" });
@@ -158,7 +193,6 @@ const removeOrder = async (req, res) => {
     res.status(500).json({ success: false, message: "Error removing order" });
   }
 };
-
 
 export {
   placeOrder,

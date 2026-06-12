@@ -4,10 +4,9 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { assets } from "../../assets/assets";
 import { StoreContext } from "../../Context/StoreContext";
 import axios from "axios";
-import {toast} from "react-toastify"
+import { toast } from "react-toastify";
 
 const LoginPopup = ({ setShowLogin }) => {
-
   const { url, setToken } = useContext(StoreContext);
 
   const [loading, setLoading] = useState(false);
@@ -32,38 +31,26 @@ const LoginPopup = ({ setShowLogin }) => {
   const onLogin = async (event) => {
     event.preventDefault();
     setLoading(true);
-    let newUrl = url 
-
-    if (currentState === "Login") {
-      // login logic
-      newUrl += "/api/user/login";
-    }
-    else {
-      // register logic
-      newUrl += "/api/user/register";
-    }
-
+    const endpoint = currentState === "Login" ? "login" : "register";
+    const requestUrl = `${url}/api/user/${endpoint}`;
 
     try {
-      const response = await axios.post(newUrl, data);
+      const response = await axios.post(requestUrl, data);
 
       if (response.data.success) {
         setToken(response.data.token);
         localStorage.setItem("token", response.data.token);
-        toast.success(currentState === "Login"
+        toast.success(
+          currentState === "Login"
             ? "Welcome back!"
             : "Account created successfully!",
         );
         setShowLogin(false);
 
-        // CHECK REDIRECT LOGIC HERE:
-        const redirectTo = location.state?.from || null;
-        if (redirectTo) {
-          navigate(redirectTo);
-        }
-
+        const redirectTo = location.state?.from || "/";
+        navigate(redirectTo);
       } else {
-        toast.error(response.data.message);
+        toast.error(response.data.message || "Unable to complete request");
       }
     } catch (error) {
       toast.error(error.response?.data?.message || "Something went wrong");
@@ -71,8 +58,6 @@ const LoginPopup = ({ setShowLogin }) => {
       setLoading(false);
     }
   };
-
-
 
   return (
     <div className="login-popup">

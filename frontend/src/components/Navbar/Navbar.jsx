@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 import { useContext, useState } from "react";
 import "./Navbar.css";
 import { assets } from "../../assets/assets";
