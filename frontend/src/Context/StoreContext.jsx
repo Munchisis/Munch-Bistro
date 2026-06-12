@@ -2,7 +2,7 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import StoreContext from "./storeContext";
 
-const StoreContextProvider = (props) => {
+ export const StoreContextProvider = (props) => {
   const [cartItems, setCartItems] = useState({});
   const url = "https://munch-bistro-backend.onrender.com";
   const [token, setToken] = useState("");
