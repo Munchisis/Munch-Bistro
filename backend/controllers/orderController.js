@@ -6,7 +6,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 // placing user order from frontend
 const placeOrder = async (req, res) => {
-  const frontendUrl = "http://localhost:5174";
+  const frontendUrl = "https://munch-bistro-frontend.onrender.com/";
 
   try {
     // Validation: Check if the cart is empty
