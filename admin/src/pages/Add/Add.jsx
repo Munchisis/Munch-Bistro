@@ -3,6 +3,7 @@ import { assets } from "../../assets/assets";
 import "./Add.css";
 import axios from "axios";
 import { toast } from "react-toastify";
+import Loader from "../../component/Loader/Loader";
 
 const Add = ({ url }) => {
   const [image, setImage] = useState(null);
@@ -79,6 +80,7 @@ const Add = ({ url }) => {
 
   return (
     <div className="add">
+      {loading && <Loader />}
       <form onSubmit={onSubmitHandler} className="flex-col">
         <div className="add-img-upload flex-col">
           <p>Upload Image</p>

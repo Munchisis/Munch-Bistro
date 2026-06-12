@@ -5,6 +5,7 @@ import { assets } from "../../assets/assets";
 import { StoreContext } from "../../Context/StoreContext";
 import axios from "axios";
 import { toast } from "react-toastify";
+import Loader from "../Loader/Loader";
 
 const LoginPopup = ({ setShowLogin }) => {
   const { url, setToken } = useContext(StoreContext);
@@ -138,6 +139,7 @@ const LoginPopup = ({ setShowLogin }) => {
             </span>
           </p>
         )}
+        {loading && <Loader />}
       </form>
     </div>
   );

@@ -90,6 +90,7 @@ const PlaceOrder = () => {
 
   return (
     <form className="place-order" onSubmit={placeOrder}>
+      {loading && <Loader />}
       <div className="place-order-left">
         <p className="title">Delivery Information</p>
         <div className="multi-fields">

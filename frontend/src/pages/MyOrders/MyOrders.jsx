@@ -4,6 +4,7 @@ import { StoreContext } from "../../Context/StoreContext";
 import axios from "axios";
 import { assets } from "../../assets/assets";
 import { useNavigate } from "react-router-dom";
+import Loader from "../../components/Loader/Loader";
 
 const MyOrders = () => {
   const { url, token } = useContext(StoreContext);
@@ -61,17 +62,8 @@ const MyOrders = () => {
       <h2>My Orders</h2>
 
       {loading ? (
-        <div className="container">
-          {[...Array(5)].map((_, index) => (
-            <div key={index} className="skeleton-order-card">
-              <div className="skeleton skeleton-img"></div>
-              <div className="skeleton skeleton-text"></div>
-              <div className="skeleton skeleton-text"></div>
-              <div className="skeleton skeleton-text"></div>
-              <div className="skeleton skeleton-text"></div>
-              <div className="skeleton skeleton-btn"></div>
-            </div>
-          ))}
+        <div className="loader-center">
+          <Loader />
         </div>
       ) : data.length === 0 ? (
         <div className="no-orders">
